@@ -38,6 +38,7 @@ import com.aster.ui.screens.mcp.McpDashboardScreen
 import com.aster.ui.screens.onboarding.OnboardingScreen
 import com.aster.ui.screens.permissions.PermissionAlertScreen
 import com.aster.ui.screens.permissions.PermissionsScreen
+import com.aster.ui.screens.pairing.QRScanScreen
 import com.aster.ui.screens.remote.RemoteConnectScreen
 import com.aster.ui.screens.remote.RemoteDashboardScreen
 import com.aster.ui.screens.settings.SettingsScreen
@@ -148,6 +149,7 @@ sealed class Screen(val route: String) {
     object PermissionAlert : Screen("permission_alert")
     object Permissions : Screen("permissions")
     object Logs : Screen("logs")
+    object QRScan : Screen("qr_scan")
 }
 
 @Composable
@@ -315,7 +317,8 @@ fun AsterNavHost(
             }
         ) {
             SettingsScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToQRScan = { navController.navigate(Screen.QRScan.route) }
             )
         }
 
@@ -376,6 +379,32 @@ fun AsterNavHost(
         ) {
             PermissionsScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.QRScan.route,
+            enterTransition = {
+                slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) +
+                        fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) +
+                        fadeOut(animationSpec = tween(300))
+            },
+            popExitTransition = {
+                slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) +
+                        fadeOut(animationSpec = tween(300))
+            }
+        ) {
+            QRScanScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onPairingComplete = { serverUrl ->
+                    // Navigate to remote connect with the paired server URL
+                    navController.navigate(Screen.RemoteConnect.route) {
+                        popUpTo(Screen.QRScan.route) { inclusive = true }
+                    }
+                }
             )
         }
     }

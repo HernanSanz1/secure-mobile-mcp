@@ -52,11 +52,14 @@ import compose.icons.feathericons.Moon
 import compose.icons.feathericons.Server
 import compose.icons.feathericons.Smartphone
 import compose.icons.feathericons.Sun
+import compose.icons.feathericons.Key
+import compose.icons.feathericons.Shield
 import compose.icons.feathericons.Wifi
 
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToQRScan: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val colors = AsterTheme.colors
@@ -204,6 +207,90 @@ fun SettingsScreen(
                                 onClick = { viewModel.setAutoStartMode("REMOTE_WS") }
                             )
                         }
+                    }
+                }
+            }
+
+            // =========================================================
+            // SECURITY SECTION
+            // =========================================================
+            AsterSectionHeader(label = "Security")
+
+            AsterCard(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Device Pairing",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = colors.text
+                    )
+
+                    Text(
+                        text = "Pair with a server using QR code to enable cryptographic authentication. This creates a hardware-backed identity for this device.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSubtle
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(colors.surface2)
+                            .clickable { onNavigateToQRScan() }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = FeatherIcons.Key,
+                                contentDescription = null,
+                                tint = colors.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "Pair via QR Code",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = colors.text
+                                )
+                                Text(
+                                    text = "Scan QR from server dashboard",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.textMuted
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = FeatherIcons.ExternalLink,
+                            contentDescription = null,
+                            tint = colors.textMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(colors.primary.copy(alpha = 0.08f))
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = FeatherIcons.Shield,
+                            contentDescription = null,
+                            tint = colors.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Private keys never leave this device",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.primary
+                        )
                     }
                 }
             }

@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import com.aster.data.crypto.HandshakeManager
+import com.aster.data.crypto.KeyManager
 import com.aster.data.local.SettingsDataStore
 import com.aster.data.local.db.AsterDatabase
 import com.aster.data.local.db.ToolCallLogDao
@@ -81,5 +83,17 @@ object AppModule {
     @Singleton
     fun provideToolCallLogDao(database: AsterDatabase): ToolCallLogDao {
         return database.toolCallLogDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideKeyManager(@ApplicationContext context: Context): KeyManager {
+        return KeyManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideHandshakeManager(keyManager: KeyManager): HandshakeManager {
+        return HandshakeManager(keyManager)
     }
 }

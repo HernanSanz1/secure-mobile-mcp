@@ -24,6 +24,7 @@ playServicesLocation = "21.3.0"
 ktor = "3.2.3"
 mcpSdk = "0.8.3"
 mlkitTextRecognition = "16.0.1"
+mlkitBarcodeScanning = "17.3.0"
 
 [libraries]
 # Core
@@ -82,6 +83,7 @@ camerax-core = { group = "androidx.camera", name = "camera-core", version.ref = 
 camerax-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 camerax-video = { group = "androidx.camera", name = "camera-video", version.ref = "camerax" }
+camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 
 # Location
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
@@ -103,6 +105,7 @@ mcp-kotlin-sdk = { group = "io.modelcontextprotocol", name = "kotlin-sdk", versi
 
 # ML Kit (on-device OCR — BUNDLED, model in APK, no Play Services / no network)
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcodeScanning" }
 
 # Testing
 junit = { group = "junit", name = "junit", version = "4.13.2" }

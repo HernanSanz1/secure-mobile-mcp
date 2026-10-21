@@ -9,6 +9,7 @@
  */
 
 import Fastify, { FastifyInstance } from 'fastify';
+import { randomUUID } from 'crypto';
 import { consola } from 'consola';
 import type { SecureConfig, RegisteredDevice } from '../types/index.js';
 import {
@@ -16,6 +17,11 @@ import {
   getSessionStats,
   cleanupExpiredSessions,
 } from '../auth/session.js';
+import {
+  getOrCreateServerKeys,
+  fingerprintKey,
+  generateSessionToken,
+} from '../auth/crypto.js';
 import {
   getConnectedPeers,
   sendSecureCommand,
@@ -327,6 +333,91 @@ export function createSecureApiServer(
     const cleaned = cleanupExpiredSessions();
     return { cleaned };
   });
+
+  // ============================================================================
+  // Pairing QR Code Generation
+  // ============================================================================
+
+  // In-memory store for pending pairing tokens (production: use Redis/DB)
+  const pendingPairingTokens = new Map<string, { expiresAt: number; createdBy?: string }>();
+
+  // Cleanup expired tokens periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [token, data] of pendingPairingTokens) {
+      if (data.expiresAt < now) {
+        pendingPairingTokens.delete(token);
+      }
+    }
+  }, 60000); // Every minute
+
+  app.post<{ Querystring: { ttl?: string } }>(
+    '/api/pairing/qr',
+    { preHandler: requireAuth },
+    async (request) => {
+      const ttlMs = parseInt(request.query.ttl ?? '300000', 10); // Default 5 minutes
+      const serverKeys = getOrCreateServerKeys();
+      const serverPublicKeyBase64 = serverKeys.signing.publicKey.toString('base64');
+      const fingerprint = fingerprintKey(serverKeys.signing.publicKey);
+
+      // Generate a one-time registration token
+      const registrationToken = generateSessionToken();
+      const expiresAt = Date.now() + ttlMs;
+
+      // Store the token
+      pendingPairingTokens.set(registrationToken, {
+        expiresAt,
+        createdBy: 'api',
+      });
+
+      // Get server URL (caller should replace with actual external URL if needed)
+      const wsPort = config.port === 5988 ? 5987 : config.port; // Guess WebSocket port
+      const serverUrl = `wss://localhost:${wsPort}`;
+
+      const pairingData = {
+        server_url: serverUrl,
+        server_public_key: serverPublicKeyBase64,
+        registration_token: registrationToken,
+        server_id: randomUUID(),
+        fingerprint: fingerprint,
+        expires_at: expiresAt,
+      };
+
+      return {
+        qrData: JSON.stringify(pairingData),
+        pairingData,
+        expiresAt,
+        fingerprint,
+      };
+    }
+  );
+
+  app.post<{ Body: { token: string } }>(
+    '/api/pairing/validate',
+    async (request, reply) => {
+      const { token } = request.body as { token: string };
+
+      if (!token) {
+        reply.status(400);
+        return { error: 'Token required' };
+      }
+
+      const pending = pendingPairingTokens.get(token);
+      if (!pending) {
+        reply.status(404);
+        return { error: 'Token not found or expired' };
+      }
+
+      if (pending.expiresAt < Date.now()) {
+        pendingPairingTokens.delete(token);
+        reply.status(410);
+        return { error: 'Token expired' };
+      }
+
+      // Token is valid - don't delete it yet, it will be used during device registration
+      return { valid: true, expiresAt: pending.expiresAt };
+    }
+  );
 
   return app;
 }

@@ -148,12 +148,14 @@ dependencies {
     // Bounded to arm64-v8a (see defaultConfig.ndk.abiFilters) so net growth is ~4 MB.
     // No new permissions, no Play Services dependency, no minSdk change (ML Kit minSdk 21; project is 26).
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.barcode.scanning)
 
     // CameraX
     implementation(libs.camerax.core)
     implementation(libs.camerax.camera2)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.video)
+    implementation(libs.camerax.view)
 
     // Location
     implementation(libs.play.services.location)

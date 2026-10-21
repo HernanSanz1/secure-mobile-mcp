@@ -539,6 +539,26 @@ Two Android-side guards run regardless of what the AI asks:
 - **Kill Switch** — while a screen-control session is active, a persistent high-priority *"AI is controlling your phone — STOP"* notification is shown. Tapping **STOP** aborts the control loop immediately and clears the overlay.
 - **PackagePolicyGuard** — a **fail-closed** denylist. If the foreground app can't be identified, control is **refused**. A bundled banking/payments denylist (PhonePe, Paytm, PayPal, Venmo, Binance, ...) blocks screen control over financial apps by default unless you explicitly allow it. Read-only actions (`observe` / screenshot / hierarchy / `find_element`) are always permitted.
 
+### Cryptographic Device Pairing (Secure Mode)
+
+For deployments requiring stronger authentication, Aster supports cryptographic device pairing:
+
+- **One-time QR pairing** — The app and server establish a unique trust relationship by scanning a QR code from the server dashboard. This QR contains the server's public key and a registration token.
+- **Hardware-backed keys** — The Android app generates device identity keys stored in Android Keystore (hardware-backed when available). Private keys never leave the device.
+- **Signed handshake** — Every connection begins with a cryptographic handshake. The device signs its authentication request; the server verifies before accepting commands.
+- **Silent rejection** — Connections without valid cryptographic credentials are ignored silently. There is no response that would help an attacker enumerate devices or probe for vulnerabilities.
+- **Command signing** — When secure mode is enabled, the server signs every command it sends. The device verifies signatures before execution, preventing command injection.
+
+To enable secure mode:
+
+1. Open the server dashboard at `localhost:5989`
+2. Click "Add Device" to generate a pairing QR
+3. In the Aster app, go to Settings and tap "Pair via QR"
+4. Scan the QR code — device keys are generated and the pairing is complete
+5. Connect to the server — the secure handshake happens automatically
+
+**Note:** Standard (non-cryptographic) pairing remains available for trusted LAN deployments where the approval gate is sufficient.
+
 ## Securing the connection
 
 Three sanctioned setups. Pick one; mixing `wss://` with a port that only speaks `ws://` is the usual failure.

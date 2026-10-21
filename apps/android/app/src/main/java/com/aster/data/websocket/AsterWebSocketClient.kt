@@ -7,6 +7,10 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import com.aster.BuildConfig
+import com.aster.data.crypto.DeviceInfo
+import com.aster.data.crypto.HandshakeManager
+import com.aster.data.crypto.KeyManager
+import com.aster.data.crypto.SecureAuthResponse
 import com.aster.data.model.AuthMessage
 import com.aster.data.model.AuthResult
 import com.aster.data.model.Command
@@ -161,12 +165,31 @@ internal object ConnectionFailureMapper {
 @Singleton
 class AsterWebSocketClient @Inject constructor(
     private val okHttpClient: OkHttpClient,
-    private val context: Context
+    private val context: Context,
+    private val keyManager: KeyManager,
+    private val handshakeManager: HandshakeManager
 ) {
     companion object {
         private const val TAG = "AsterWebSocketClient"
         private val APP_VERSION = BuildConfig.VERSION_NAME
     }
+
+    // Secure authentication mode flag
+    @Volatile
+    private var useSecureAuth = false
+
+    /**
+     * Enable secure cryptographic authentication.
+     * When enabled, the client will use signed handshake instead of simple auth.
+     */
+    fun enableSecureAuth(enabled: Boolean) {
+        useSecureAuth = enabled
+    }
+
+    /**
+     * Check if device has cryptographic keys for secure auth.
+     */
+    fun hasSecureKeys(): Boolean = keyManager.hasKeys()
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -330,6 +353,44 @@ class AsterWebSocketClient @Inject constructor(
 
     private fun sendAuthMessage() {
         val deviceId = getDeviceId()
+
+        // Use secure auth if enabled and keys are available
+        if (useSecureAuth && keyManager.hasKeys()) {
+            sendSecureAuthMessage(deviceId)
+        } else {
+            sendLegacyAuthMessage(deviceId)
+        }
+    }
+
+    private fun sendSecureAuthMessage(deviceId: String) {
+        val deviceInfo = DeviceInfo(
+            name = "${Build.MANUFACTURER} ${Build.MODEL}",
+            model = Build.MODEL,
+            manufacturer = Build.MANUFACTURER,
+            platform = "android",
+            osVersion = Build.VERSION.RELEASE,
+            appVersion = APP_VERSION
+        )
+
+        val authRequestJson = handshakeManager.createAuthRequest(deviceId, deviceInfo)
+        if (authRequestJson == null) {
+            Log.e(TAG, "Failed to create secure auth request")
+            _connectionState.value = ConnectionState.ERROR
+            scope.launch {
+                _errors.emit("Failed to sign authentication request")
+            }
+            return
+        }
+
+        if (BuildConfig.DEBUG) Log.d(TAG, "Sending secure auth for device: ${deviceId.take(8)}...")
+        val sent = webSocket?.send(authRequestJson) ?: false
+        if (!sent) {
+            Log.w(TAG, "Failed to send secure auth message")
+        }
+        _connectionState.value = ConnectionState.PENDING_APPROVAL
+    }
+
+    private fun sendLegacyAuthMessage(deviceId: String) {
         val authMessage = AuthMessage(
             deviceId = deviceId,
             deviceName = "${Build.MANUFACTURER} ${Build.MODEL}",
@@ -381,12 +442,18 @@ class AsterWebSocketClient @Inject constructor(
                     val authResult = json.decodeFromString<AuthResult>(text)
                     handleAuthResult(authResult)
                 }
+                "secure_auth_response" -> {
+                    handleSecureAuthResponse(text)
+                }
                 "command" -> {
                     val command = json.decodeFromString<Command>(text).copy(connectionGeneration = generation)
                     if (BuildConfig.DEBUG) Log.d(TAG, "Received command: ${command.action}")
                     scope.launch {
                         _incomingCommands.emit(command)
                     }
+                }
+                "secure_command" -> {
+                    handleSecureCommand(text, generation)
                 }
                 "heartbeat_ack" -> {
                     lastAckAt = System.currentTimeMillis()
@@ -398,6 +465,83 @@ class AsterWebSocketClient @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse message: ${e.message}", e)
+        }
+    }
+
+    private fun handleSecureAuthResponse(text: String) {
+        val response = handshakeManager.handleAuthResponse(text)
+        if (response == null) {
+            Log.e(TAG, "Failed to parse secure auth response")
+            return
+        }
+
+        if (BuildConfig.DEBUG) Log.d(TAG, "Secure auth result: ${response.status}")
+
+        when (response.status) {
+            "approved" -> {
+                _connectionState.value = ConnectionState.APPROVED
+                _deviceStatus.value = DeviceStatus.APPROVED
+            }
+            "pending" -> {
+                _connectionState.value = ConnectionState.PENDING_APPROVAL
+                _deviceStatus.value = DeviceStatus.PENDING
+            }
+            "rejected", "revoked" -> {
+                _connectionState.value = ConnectionState.REJECTED
+                _deviceStatus.value = DeviceStatus.REJECTED
+                shouldReconnect = false
+            }
+            "error" -> {
+                _connectionState.value = ConnectionState.ERROR
+                response.message?.let { msg ->
+                    scope.launch {
+                        _errors.emit(msg)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleSecureCommand(text: String, generation: Int) {
+        // Verify command signature if secure auth is enabled
+        if (useSecureAuth) {
+            val verifiedCommand = handshakeManager.verifyCommand(text)
+            if (verifiedCommand == null) {
+                // Silent discard - do not respond to unsigned/invalid commands
+                if (BuildConfig.DEBUG) Log.w(TAG, "Discarding invalid secure command")
+                return
+            }
+
+            // Convert to Command format
+            val command = Command(
+                type = "command",
+                id = verifiedCommand.id,
+                action = verifiedCommand.action,
+                params = verifiedCommand.params,
+                connectionGeneration = generation
+            )
+
+            if (BuildConfig.DEBUG) Log.d(TAG, "Received verified secure command: ${command.action}")
+            scope.launch {
+                _incomingCommands.emit(command)
+            }
+        } else {
+            // Fall back to parsing as regular command
+            try {
+                val secureCommand = json.decodeFromString<com.aster.data.crypto.SecureCommand>(text)
+                val command = Command(
+                    type = "command",
+                    id = secureCommand.id,
+                    action = secureCommand.action,
+                    params = secureCommand.params,
+                    connectionGeneration = generation
+                )
+                scope.launch {
+                    _incomingCommands.emit(command)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse secure command", e)
+            }
         }
     }
 
