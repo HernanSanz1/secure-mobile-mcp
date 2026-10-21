@@ -60,9 +60,11 @@ object AppModule {
     @Singleton
     fun provideWebSocketClient(
         okHttpClient: OkHttpClient,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        keyManager: KeyManager,
+        handshakeManager: HandshakeManager
     ): AsterWebSocketClient {
-        return AsterWebSocketClient(okHttpClient, context)
+        return AsterWebSocketClient(okHttpClient, context, keyManager, handshakeManager)
     }
 
     @Provides
