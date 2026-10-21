@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Network Extension for WireGuard tunnel -->
+    <key>com.apple.developer.networking.networkextension</key>
+    <array>
+        <string>packet-tunnel-provider</string>
+    </array>
+
+    <!-- App Groups for sharing data with Network Extension -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.securemcp.app</string>
+    </array>
+
+    <!-- Keychain sharing for secure credential storage -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)com.securemcp.app</string>
+    </array>
+
+    <!-- Background modes -->
+    <key>com.apple.developer.networking.vpn.api</key>
+    <array>
+        <string>allow-vpn</string>
+    </array>
+
+    <!-- Siri/Shortcuts support -->
+    <key>com.apple.developer.siri</key>
+    <true/>
+</dict>
+</plist>

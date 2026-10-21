@@ -18,6 +18,8 @@
   <a href="https://www.npmjs.com/package/aster-mcp"><img src="https://img.shields.io/npm/v/aster-mcp?style=flat-square&color=blue" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/aster-mcp"><img src="https://img.shields.io/npm/dm/aster-mcp?style=flat-square&color=green" alt="npm downloads" /></a>
   <a href="https://github.com/satyajiit/aster-mcp/blob/main/mcp/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/satyajiit/aster-mcp/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/satyajiit/aster-mcp/ci.yml?style=flat-square&label=CI" alt="CI" /></a>
+  <a href="https://github.com/satyajiit/aster-mcp/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/satyajiit/aster-mcp/security.yml?style=flat-square&label=Security" alt="Security" /></a>
   <a href="https://clawhub.ai/satyajit/aster"><img src="https://img.shields.io/badge/ClawHub-skill-purple?style=flat-square" alt="ClawHub" /></a>
   <a href="https://openclaw.ai"><img src="https://img.shields.io/badge/OpenClaw-compatible-orange?style=flat-square" alt="OpenClaw" /></a>
   <img src="https://img.shields.io/badge/49-MCP_tools-2dd4bf?style=flat-square" alt="49 MCP tools" />

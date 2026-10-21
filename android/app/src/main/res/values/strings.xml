@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SecureMCP</string>
+    <string name="tunnel_channel_name">Tunnel Service</string>
+    <string name="tunnel_channel_description">WireGuard tunnel connection status</string>
+    <string name="mcp_channel_name">MCP Commands</string>
+    <string name="mcp_channel_description">MCP command execution status</string>
+    <string name="accessibility_service_description">Enables UI automation for MCP commands</string>
+    <string name="tunnel_notification_title">SecureMCP Tunnel</string>
+    <string name="tunnel_notification_connected">Connected to MCP server</string>
+    <string name="tunnel_notification_disconnected">Disconnected</string>
+</resources>

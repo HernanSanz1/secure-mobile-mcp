@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Lint staged files
+cd mcp && pnpm lint || exit 1
+
+# Secrets detection with gitleaks
+if command -v gitleaks &> /dev/null; then
+  gitleaks protect --staged --verbose || exit 1
+else
+  echo "Warning: gitleaks not installed, skipping secrets scan"
+fi
+

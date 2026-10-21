@@ -1,0 +1,30 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "secure-mobile-mcp gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''\.lock$''',
+  '''pnpm-lock\.yaml$''',
+  '''package-lock\.json$''',
+  '''\.png$''',
+  '''\.jpg$''',
+  '''\.gif$''',
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|secret[_-]?key)\s*[:=]\s*['\"]?([a-zA-Z0-9_\-]{20,})['\"]?'''
+tags = ["key", "api"]
+
+[[rules]]
+id = "android-keystore-password"
+description = "Android Keystore Password"
+regex = '''(?i)(storePassword|keyPassword)\s*[:=]\s*['\"]?([^'"\s]{4,})['\"]?'''
+tags = ["android", "keystore"]
